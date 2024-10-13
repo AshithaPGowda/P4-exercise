@@ -96,10 +96,10 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
-    action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
+    action ipv4_forward(macAddr_t dstAddr, macAddr_t srcAddr, egressSpec_t port) {
         /* TODO: fill out code in action body */
         hdr.ethernet.dstAddr = dstAddr;                 // Set destination MAC to next hop
-        // hdr.ethernet.srcAddr = standard_metadata.ingress_port; // Set source MAC to switch MAC
+        hdr.ethernet.srcAddr = srcAddr;; // Set source MAC to switch MAC
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;                // Decrement TTL
         standard_metadata.egress_spec = port;           // Set egress port
 	

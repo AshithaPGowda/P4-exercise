@@ -15,7 +15,7 @@ import p4runtime_lib.bmv2
 import p4runtime_lib.helper
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 
-def writeForwardingRule(p4info_helper, sw, dst_ip_addr, 
+def writeForwardingRule(p4info_helper, sw, dst_ip_addr, src_eth_addr,
                          dst_eth_addr, port):
     """
     :param p4info_helper: the P4Info helper
@@ -32,6 +32,7 @@ def writeForwardingRule(p4info_helper, sw, dst_ip_addr,
         action_name="MyIngress.ipv4_forward",
         action_params={
             "dstAddr": dst_eth_addr,
+            "srcAddr": src_eth_addr,
             "port": port,
         })
     sw.WriteTableEntry(table_entry)
@@ -40,57 +41,61 @@ def writeForwardingRule(p4info_helper, sw, dst_ip_addr,
 def writeAllForwardingRules(p4info_helper, sw_list):
     s1, s2, s3, s4 = sw_list
 
+def writeAllForwardingRules(p4info_helper, sw_list):
+    s1, s2, s3, s4 = sw_list
+
     # Write forwarding rules for s1
     writeForwardingRule(p4info_helper, sw=s1, dst_ip_addr="10.0.1.1", 
-                         dst_eth_addr="08:00:00:00:01:11", port=1) 
+                         dst_eth_addr="08:00:00:00:01:11", src_eth_addr="08:00:00:00:01:01", port=1) 
 
     writeForwardingRule(p4info_helper, sw=s1, dst_ip_addr="10.0.2.2", 
-                         dst_eth_addr="08:00:00:00:02:22", port=2) 
+                         dst_eth_addr="08:00:00:00:02:22", src_eth_addr="08:00:00:00:01:01", port=2) 
 
     writeForwardingRule(p4info_helper, sw=s1, dst_ip_addr="10.0.3.3", 
-                         dst_eth_addr="08:00:00:00:03:00", port=3) 
+                         dst_eth_addr="08:00:00:00:03:00", src_eth_addr="08:00:00:00:01:01", port=3) 
 
     writeForwardingRule(p4info_helper, sw=s1, dst_ip_addr="10.0.4.4", 
-                         dst_eth_addr="08:00:00:00:04:00", port=4) 
+                         dst_eth_addr="08:00:00:00:04:00", src_eth_addr="08:00:00:00:01:01", port=4) 
 
     # Write forwarding rules for s2
     writeForwardingRule(p4info_helper, sw=s2, dst_ip_addr="10.0.1.1",
-                         dst_eth_addr="08:00:00:00:03:00", port = 4)
+                         dst_eth_addr="08:00:00:00:03:00", src_eth_addr="08:00:00:00:02:01", port=4)
     
     writeForwardingRule(p4info_helper, sw=s2, dst_ip_addr="10.0.2.2",
-                         dst_eth_addr="08:00:00:00:04:00", port = 3) 
+                         dst_eth_addr="08:00:00:00:04:00", src_eth_addr="08:00:00:00:02:01", port=3) 
 
     writeForwardingRule(p4info_helper, sw=s2, dst_ip_addr="10.0.3.3",
-                         dst_eth_addr="08:00:00:00:03:33", port = 1)
+                         dst_eth_addr="08:00:00:00:03:33", src_eth_addr="08:00:00:00:02:01", port=1)
 
     writeForwardingRule(p4info_helper, sw=s2, dst_ip_addr="10.0.4.4",
-                         dst_eth_addr="08:00:00:00:04:44", port = 2)
+                         dst_eth_addr="08:00:00:00:04:44", src_eth_addr="08:00:00:00:02:01", port=2)
 
     # Write forwarding rules for s3
     writeForwardingRule(p4info_helper, sw=s3, dst_ip_addr="10.0.1.1",
-                         dst_eth_addr="08:00:00:00:01:00", port = 1)
+                         dst_eth_addr="08:00:00:00:01:00", src_eth_addr="08:00:00:00:03:01", port=1)
     
     writeForwardingRule(p4info_helper, sw=s3, dst_ip_addr="10.0.2.2",
-                         dst_eth_addr="08:00:00:00:01:00", port = 1) 
+                         dst_eth_addr="08:00:00:00:01:00", src_eth_addr="08:00:00:00:03:01", port=1) 
 
     writeForwardingRule(p4info_helper, sw=s3, dst_ip_addr="10.0.3.3",
-                         dst_eth_addr="08:00:00:00:02:00", port = 2)
+                         dst_eth_addr="08:00:00:00:02:00", src_eth_addr="08:00:00:00:03:01", port=2)
 
     writeForwardingRule(p4info_helper, sw=s3, dst_ip_addr="10.0.4.4",
-                         dst_eth_addr="08:00:00:00:02:00", port = 2)
+                         dst_eth_addr="08:00:00:00:02:00", src_eth_addr="08:00:00:00:03:01", port=2)
 
     # Write forwarding rules for s4
     writeForwardingRule(p4info_helper, sw=s4, dst_ip_addr="10.0.1.1",
-                         dst_eth_addr="08:00:00:00:01:00", port = 2)
+                         dst_eth_addr="08:00:00:00:01:00", src_eth_addr="08:00:00:00:04:01", port=2)
     
     writeForwardingRule(p4info_helper, sw=s4, dst_ip_addr="10.0.2.2",
-                         dst_eth_addr="08:00:00:00:01:00", port = 2) 
+                         dst_eth_addr="08:00:00:00:01:00", src_eth_addr="08:00:00:00:04:01", port=2) 
 
     writeForwardingRule(p4info_helper, sw=s4, dst_ip_addr="10.0.3.3",
-                         dst_eth_addr="08:00:00:00:02:00", port = 1)
+                         dst_eth_addr="08:00:00:00:02:00", src_eth_addr="08:00:00:00:04:01", port=1)
 
     writeForwardingRule(p4info_helper, sw=s4, dst_ip_addr="10.0.4.4",
-                             dst_eth_addr="08:00:00:00:02:00", port = 1)
+                         dst_eth_addr="08:00:00:00:02:00", src_eth_addr="08:00:00:00:04:01", port=1) 
+
 
 
 def printGrpcError(e):
