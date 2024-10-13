@@ -124,6 +124,8 @@ control MyIngress(inout headers hdr,
          */
         if (hdr.ipv4.isValid()) {  // Apply table only if the IPv4 header is valid
             ipv4_exact.apply();    
+        }else {
+            drop();  // Drop packets with invalid IPv4 headers
         }
 
 	}
@@ -172,9 +174,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         /* TODO: add deparser logic */
         packet.emit(hdr.ethernet);  // Emit Ethernet header first
-        if (hdr.ipv4.isValid()) {
-            packet.emit(hdr.ipv4);  // Emit IPv4 header if valid
-        }
+        packet.emit(hdr.ipv4); 
     }
 }
 
