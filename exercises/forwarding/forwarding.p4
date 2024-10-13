@@ -56,15 +56,21 @@ parser MyParser(packet_in packet,
          */
 
     state start {
-        
+        transition parse_ethernet;
     }
 
     state parse_ethernet {
-       
+        packet.extract(hdr.ethernet);  // Extract the Ethernet header
+        transition select(hdr.ethernet.etherType) {
+            TYPE_IPV4: parse_ipv4;     // If it's an IPv4 packet, parse IPv4
+            default: accept;           // Otherwise, finish parsing
+        }
     }
 
     state parse_ipv4 {
-        
+        packet.extract(hdr.ipv4);      // Extract the IPv4 header
+        transition accept;             // Finish parsing
+
     }
 }
 
@@ -91,6 +97,10 @@ control MyIngress(inout headers hdr,
 
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
         /* TODO: fill out code in action body */
+        hdr.ethernet.dstAddr = dstAddr;                 // Set destination MAC to next hop
+        hdr.ethernet.srcAddr = standard_metadata.ingress_port; // Set source MAC to switch MAC
+        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;                // Decrement TTL
+        standard_metadata.egress_spec = port;           // Set egress port
 	
     }
 
@@ -111,6 +121,9 @@ control MyIngress(inout headers hdr,
         /* TODO: fix ingress control logic
          *  - ipv4_exact should be applied only when IPv4 header is valid
          */
+        if (hdr.ipv4.isValid()) {  // Apply table only if the IPv4 header is valid
+            ipv4_exact.apply();    
+        }
 
 	}
 }
@@ -157,6 +170,10 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         /* TODO: add deparser logic */
+        packet.emit(hdr.ethernet);  // Emit Ethernet header first
+        if (hdr.ipv4.isValid()) {
+            packet.emit(hdr.ipv4);  // Emit IPv4 header if valid
+        }
     }
 }
 
