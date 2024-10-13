@@ -36,6 +36,17 @@ header ipv4_t {
 }
 
 // TODO: Define the filter and UDP headers here.
+header filter_t {
+    bit<8>  susp;  // Suspicious flag
+    bit<8>  proto; // Next protocol, typically set to 17 (UDP)
+}
+
+header udp_t {
+    bit<16> srcPort;  // Source port
+    bit<16> dstPort;  // Destination port
+    bit<16> length;   // Length of the UDP packet
+    bit<16> checksum; // Checksum
+}
 
 struct metadata {
     /* empty */
@@ -46,6 +57,8 @@ struct headers {
     ipv4_t       ipv4;
 
     // TODO: instantiate the filter and udp headers here
+    filter_t     filter;
+    udp_t        udp;
 }
 
 /*************************************************************************
@@ -71,16 +84,26 @@ parser MyParser(packet_in packet,
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
-        /* TODO: transition to either parsing the 
-                 filter header or accept depending
-                 on hdr.ipv4.protocol
-        */ 
+        transition select(hdr.ipv4.protocol) {
+            PROTO_FILTER: parse_filter; // Parse filter if protocol is 146
+            default: accept;
+        }
     }
 
-    /* TODO: add two parser states, one for parsing
-             the filter header and one for parsing
-             the UDP header
-    */
+    // Parser state for parsing the filter header
+    state parse_filter {
+        packet.extract(hdr.filter);
+        transition select(hdr.filter.proto) {
+            PROTO_UDP: parse_udp;  // Parse UDP if filter.proto is 17
+            default: accept;
+        }
+    }
+
+    // Parser state for parsing the UDP header
+    state parse_udp {
+        packet.extract(hdr.udp); // Extract UDP header
+        transition accept;
+    }
 }
 
 /*************************************************************************
@@ -100,15 +123,24 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
-    /* TODO: define an action to set the
-             susp field in the filter header
-    */      
+    /* Action to set the susp field in the filter header */
+    action mark_suspicious() {
+        hdr.filter.susp = 1;  // Set the suspicious flag to 1
+    }
 
-    /* TODO: define a table that matches on
-             source IP address and UDP source
-             port, and applies the above actions
-             as an option
-    */
+    /* Table that matches on source IP address and UDP source port, and applies actions */
+    table filter_table {
+        key = {
+            hdr.ipv4.srcAddr: exact;  // Match on source IP address
+            hdr.udp.srcPort: exact;   // Match on source UDP port
+        }
+        actions = {
+            mark_suspicious;          // Mark the packet as suspicious
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -136,13 +168,12 @@ control MyIngress(inout headers hdr,
 
     apply {
         if (hdr.ipv4.isValid()) {
+            /* Apply the filter table if the filter and UDP headers have been parsed */
+            if (hdr.filter.isValid() && hdr.udp.isValid()) {
+                filter_table.apply();
+            }
 
-            /* TODO: Check if the filter and UDP headers
-                     have been parsed. If yes, apply
-                     the filter table
-            */
-
-            ipv4_exact.apply();
+            ipv4_exact.apply();  // Proceed with IP forwarding
         }
     }
 }
@@ -189,10 +220,12 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
-        /* TODO: use the emit function to
-                 to emit the filter and udp
-                 headers as well
-        */
+        if (hdr.filter.isValid()) {
+            packet.emit(hdr.filter); // Emit filter header if valid
+        }
+        if (hdr.udp.isValid()) {
+            packet.emit(hdr.udp);    // Emit UDP header if valid
+        }
     }
 }
 

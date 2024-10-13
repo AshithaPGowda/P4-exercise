@@ -108,6 +108,16 @@ def writeFilterRule(p4info_helper, sw, src_ip_addr, src_port):
     #       name of the table, keys, and actions
     #       match what is specified in the P4 
     #       program.
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="MyIngress.filter_table",   # Matches the P4 table name
+        match_fields={
+            "hdr.ipv4.srcAddr": (src_ip_addr),
+            "hdr.udp.srcPort": (src_port)
+        },
+        action_name="MyIngress.mark_suspicious",   # Matches the suspicious marking action
+        action_params={}
+    )
+    sw.WriteTableEntry(table_entry)
     
     print("Installed filter rule for (%s, %d) on %s" % (src_ip_addr, src_port, sw.name))
 
