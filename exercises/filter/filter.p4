@@ -171,9 +171,11 @@ control MyIngress(inout headers hdr,
             /* Apply the filter table if the filter and UDP headers have been parsed */
             if (hdr.filter.isValid() && hdr.udp.isValid()) {
                 filter_table.apply();
+                ipv4_exact.apply();// Proceed with IP forwarding
+            }else{
+                drop();
             }
-
-            ipv4_exact.apply();  // Proceed with IP forwarding
+              
         }
     }
 }
@@ -220,12 +222,8 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
-        if (hdr.filter.isValid()) {
-            packet.emit(hdr.filter); // Emit filter header if valid
-        }
-        if (hdr.udp.isValid()) {
-            packet.emit(hdr.udp);    // Emit UDP header if valid
-        }
+        packet.emit(hdr.filter); 
+        packet.emit(hdr.udp);
     }
 }
 
