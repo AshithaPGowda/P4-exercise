@@ -42,6 +42,7 @@ struct headers {
     ipv4_t       ipv4;
 }
 
+
 /*************************************************************************
 *********************** P A R S E R  ***********************************
 *************************************************************************/
@@ -98,7 +99,7 @@ control MyIngress(inout headers hdr,
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
         /* TODO: fill out code in action body */
         hdr.ethernet.dstAddr = dstAddr;                 // Set destination MAC to next hop
-        hdr.ethernet.srcAddr = standard_metadata.ingress_port; // Set source MAC to switch MAC
+        // hdr.ethernet.srcAddr = standard_metadata.ingress_port; // Set source MAC to switch MAC
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;                // Decrement TTL
         standard_metadata.egress_spec = port;           // Set egress port
 	
